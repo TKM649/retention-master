@@ -341,7 +341,7 @@ export default function App() {
               className="bg-[#0F9D58] hover:bg-[#0B7F46] text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 mt-2 shadow-md"
             >
               <Plus className="w-5 h-5" />
-              Schedule Revision
+              Schedule Now 🚀
             </button>
           </form>
         </div>
