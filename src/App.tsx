@@ -1,5 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckCircle, Plus, Flame, Brain, Trash2, Link as LinkIcon, Clock, X, MessageSquare } from 'lucide-react';
+import { Calendar, CheckCircle, Plus, Flame, Brain, Trash2, Link as LinkIcon, Clock, X, MessageSquare, Bell, Volume2, StickyNote, ChevronDown, ChevronUp } from 'lucide-react';
+
+// Alarm beep sound (short beep as base64 data URI — no external file needed)
+const ALARM_SOUND = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZeYl5KNiIV/e3p6fYKIjpSXmJeTjomEf3t5eX2ChoySl5mYk46JhH97eXl9g4eOk5iZl5KNiIF9enp7f4WKkJWYmZaSjYeBfHl5fIGGjJKXmZiUj4qEfnt5en6DhoyRlpmYlI+KhH57eXp+g4eMkpeZmJSPioR+e3l6foOHjJKXmZiUj4qEfnt5en6Dh4yRl5mYk4+KhH97eXp+g4eMkpeZmJSPioR+e3l6foOHjJKXmZiUj4qEfnt5en6Dh4yRl5mYlI+KhH57eXp+g4eMkpeZmJSPioR+e3l6foOIjZOYmpiUj4qEfnt5en6DiI2TmJqYlI+KhH57eXp+g4iNk5iamJSPioR+e3l6foOIjZOYmpiUj4qEfnt5en6DiI2TmJqYlI+KhH57eXp+g4iNk5iamJSPi4V/e3p7f4SJj5SZmpiUkIuFgHx6e3+EiY+UmZqYlJCLhYB8ent/hImPlJmamJSQi4WAfHp7f4SJj5SZmpiUkIuFgHx6e3+EiY+UmZqYlI+KhH97enp+g4iNk5eZmJOOiYN+e3l6fYKHjJKXmJeTjomDfnt5en2Ch4yRl5iXk46Jg357eXp9goeMkpeYl5OOiYN+e3l6fYKHjJGXmJeTjomDfnt5en2Ch4ySl5iXk46Jg357eXl9goeMkpeYl5OOiIN9e3l5fYKGjJGXmJeTjYiDfXt5eX2ChoyRl5eXk42Ig317eXl9goaMkZeXl5ONiIN9e3l5fYKGjJGXl5eTjYiDfXt5eX2ChoyRl5eXk42Ig317eXl9goaMkZeXl5ONiIN9e3l5fYKGjJGXl5eTjYiDfXt5eX2ChoyRl5eXk42Ig317eXl9goaMkZeXl5ONiIN9e3l5fYKGjJGXl5eTjYiDfXt5eX2ChoyRl5eXk42Ig357eXp9goeMkpeYl5OOiYN+e3l6fYKHjJKXmJeTjomDfnt5en2Ch4yRl5iXk46Jg357eXp9goeMkpeYl5OOiYN+e3l6fYKHjJGXmJeTjomDfnt5en2Ch4ySl5iXk46Jg357eXl8gYWLkJWXl5KMh4J8enh5fIGFi5CVl5eSjIeCfHp4eXyBhYuQlZeXkoyHgnx6eHl8gYWLkJWXl5KMh4J8enh5fIGFi5CVl5eSjIeCfHp4eXyBhYuQlZeXkoyHgnx6eHl8gYWLkJWXl5KNh4J9enh6fIGGi5GWmJeTjYiDfXt5eX2ChoyRl5iXk46Ig357eXl9goaMkZeYl5OOiIN9e3l5fYKGjJGXmJeTjomDfnt5en2Ch4yRl5iXk46Jg357eXp9goeMkpeYl5OOiYN+e3l6fYKHjJKXmJeTjomEfnt5en2Ch4yRl5iXk46Jg357eXp9goeMkpeYl5OOiYN+e3l6fYKHjJKXmJeTjomEfnt5en6DiI2TmJqYlI+KhH57eXp+g4iNk5iamJSPi4V/fHp7f4SJj5SZmpiUkIuFgHx6e3+EiY+UmZqYlJCLhYB8ent/hImPlJmamJSQi4WAfHp7f4SJj5SZmpiUkIuFgHx6e3+EiY+UmZqYlJCLhYB8ent/hImPlJmamJSQi4WAfHt7f4SJj5WZmpiVkIuGgHx7fICFipCVmpqZlZCLhoB8e3yAhYqQlZqamZWQi4aAfHt8gIWKkJWampmVkIuGgHx7fICFipCVmpmZlI+LhX97enp+g4iNk5iZmJOOiYN+e3l6fYKHjJKXmZiTjomDfnt5en2ChoyRl5mYk46Jg357eXp9goaMkpeZmJOOiYN+e3l6fYKHjJKXmZiTjomDfnt5en2Ch4ySl5mYk46Jg357eXp9goeMkpeZmJSPioR+e3l6foOHjJKXmZiUj4qEfnt5en6Dh4yRl5mYlI+KhH57eXp+g4eMkpeZmJSPioR+e3l6foOHjJKXmZiUj4qEfnt5en6Dh4yRl5mYlI+KhH57eXp+g4eMkpeZmJSPioR+e3l6foOHjJKXmZiUj4qEfnt5en6Dh4yRl5mYlI+KhH57eXp+g4eMkw==';
+
+// Day badge colors for revision intervals
+const DAY_BADGE_CONFIG: Record<number, { bg: string; text: string }> = {
+  3: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
+  7: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700' },
+  14: { bg: 'bg-purple-50 border-purple-200', text: 'text-purple-700' },
+  24: { bg: 'bg-orange-50 border-orange-200', text: 'text-orange-700' },
+  30: { bg: 'bg-red-50 border-red-200', text: 'text-red-700' },
+};
 
 // Hard-hitting quotes database
 const QUOTES = [
@@ -32,6 +44,12 @@ interface Resource {
   title: string; // e.g., "YouTube Video", "PDF Notes"
 }
 
+interface Note {
+  id: string;
+  text: string;
+  important: boolean; // "zyada dhyan dena" flag
+}
+
 interface Task {
   id: string;
   text: string;
@@ -41,6 +59,8 @@ interface Task {
   resources: Resource[]; // Changed from single link to array
   reminderTime?: string;
   intervalDay?: number; // Which repetition day this task belongs to
+  notes?: Note[]; // Sub-topics / personal notes
+  topicKey?: string; // Shared key to sync notes across all revisions of same topic
 }
 
 export default function App() {
@@ -53,7 +73,9 @@ export default function App() {
         date: new Date(t.date),
         originalDate: new Date(t.originalDate),
         // Backward compatibility: Convert old docLink to new resources array
-        resources: t.resources || (t.docLink ? [{ id: 'old', url: t.docLink, title: 'Resource' }] : [])
+        resources: t.resources || (t.docLink ? [{ id: 'old', url: t.docLink, title: 'Resource' }] : []),
+        notes: t.notes || [],
+        topicKey: t.topicKey || `${t.text}_${t.originalDate}`
       }));
     }
     return [];
@@ -82,6 +104,14 @@ export default function App() {
 
   // Recall modal state (shown after 30-day revision)
   const [recallModalTask, setRecallModalTask] = useState<Task | null>(null);
+
+  // Track which tasks have already been notified this session (avoid repeat alarms)
+  const notifiedTaskIds = useRef<Set<string>>(new Set());
+
+  // Notes UI state
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [noteInput, setNoteInput] = useState('');
+  const [noteImportant, setNoteImportant] = useState(false);
 
   // Daily Reality Check Quote
   const todayQuote = QUOTES[new Date().getDate() % QUOTES.length];
@@ -112,6 +142,63 @@ export default function App() {
       Notification.requestPermission();
     }
   }, []);
+
+  // Send browser notification when app opens with today's pending tasks
+  useEffect(() => {
+    const todayStr = new Date().toDateString();
+    const pendingToday = tasks.filter(t => t.date.toDateString() === todayStr && !t.completed);
+    if (pendingToday.length > 0 && "Notification" in window && Notification.permission === 'granted') {
+      const notifKey = 'sr_last_open_notif';
+      const lastNotif = localStorage.getItem(notifKey);
+      if (lastNotif !== todayStr) {
+        new Notification('RetentionMaster 🧠', {
+          body: `Aaj ${pendingToday.length} topic${pendingToday.length > 1 ? 's' : ''} revise karne hain!`,
+          icon: '/app-icon.png'
+        });
+        localStorage.setItem(notifKey, todayStr);
+      }
+    }
+  }, []);
+
+  // Check reminderTime every 60 seconds — fire alarm + notification when it matches
+  useEffect(() => {
+    const playAlarm = () => {
+      try {
+        const audio = new Audio(ALARM_SOUND);
+        audio.volume = 0.7;
+        audio.play().catch(() => {});
+      } catch (_) {}
+    };
+
+    const checkReminders = () => {
+      const now = new Date();
+      const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const todayStr = now.toDateString();
+
+      tasks.forEach(t => {
+        if (
+          t.reminderTime &&
+          t.reminderTime === currentHHMM &&
+          !t.completed &&
+          t.date.toDateString() === todayStr &&
+          !notifiedTaskIds.current.has(t.id)
+        ) {
+          notifiedTaskIds.current.add(t.id);
+          playAlarm();
+          if ("Notification" in window && Notification.permission === 'granted') {
+            new Notification('Revision Time! ⏰', {
+              body: `"${t.text}" — Day ${t.intervalDay || '?'} revision`,
+              icon: '/app-icon.png'
+            });
+          }
+        }
+      });
+    };
+
+    checkReminders();
+    const intervalId = setInterval(checkReminders, 60000);
+    return () => clearInterval(intervalId);
+  }, [tasks]);
 
   useEffect(() => {
     return () => {
@@ -162,7 +249,8 @@ export default function App() {
   };
 
   const addRevisions = (taskText: string, resources: Resource[], time: string) => {
-    const intervals = [3, 7, 14, 21, 30];
+    const intervals = [3, 7, 14, 24, 30];
+    const topicKey = `${taskText}_${new Date().toISOString()}`;
     const newTasks: Task[] = intervals.map(days => {
       const date = new Date();
       date.setDate(date.getDate() + days);
@@ -174,7 +262,9 @@ export default function App() {
         originalDate: new Date(),
         resources: resources, 
         reminderTime: time,
-        intervalDay: days
+        intervalDay: days,
+        notes: [],
+        topicKey: topicKey
       };
     });
     setTasks([...tasks, ...newTasks]);
@@ -192,7 +282,9 @@ export default function App() {
       originalDate: task.originalDate,
       resources: task.resources,
       reminderTime: task.reminderTime,
-      intervalDay: (task.intervalDay || 30) + extraDays
+      intervalDay: (task.intervalDay || 30) + extraDays,
+      notes: task.notes || [],
+      topicKey: task.topicKey || getTopicKey(task)
     };
     setTasks(prev => [...prev, newTask]);
   };
@@ -247,6 +339,50 @@ export default function App() {
 
   const deleteTask = (taskId: string) => {
     setTasks(tasks.filter(t => t.id !== taskId));
+  };
+
+  // --- Notes / Sub-topics functions ---
+  // Get topicKey for a task (used to sync notes across all revisions of same topic)
+  const getTopicKey = (t: Task) => t.topicKey || `${t.text}_${t.originalDate}`;
+
+  // Add a note to a task — syncs across all revisions of the same topic
+  const addNote = (taskId: string) => {
+    if (!noteInput.trim()) return;
+    const target = tasks.find(t => t.id === taskId);
+    if (!target) return;
+    const key = getTopicKey(target);
+    const newNote: Note = { id: crypto.randomUUID(), text: noteInput.trim(), important: noteImportant };
+    setTasks(tasks.map(t =>
+      getTopicKey(t) === key
+        ? { ...t, notes: [...(t.notes || []), newNote] }
+        : t
+    ));
+    setNoteInput('');
+    setNoteImportant(false);
+  };
+
+  // Delete a note — removes from all revisions of the same topic
+  const deleteNote = (taskId: string, noteId: string) => {
+    const target = tasks.find(t => t.id === taskId);
+    if (!target) return;
+    const key = getTopicKey(target);
+    setTasks(tasks.map(t =>
+      getTopicKey(t) === key
+        ? { ...t, notes: (t.notes || []).filter(n => n.id !== noteId) }
+        : t
+    ));
+  };
+
+  // Toggle important flag on a note
+  const toggleNoteImportant = (taskId: string, noteId: string) => {
+    const target = tasks.find(t => t.id === taskId);
+    if (!target) return;
+    const key = getTopicKey(target);
+    setTasks(tasks.map(t =>
+      getTopicKey(t) === key
+        ? { ...t, notes: (t.notes || []).map(n => n.id === noteId ? { ...n, important: !n.important } : n) }
+        : t
+    ));
   };
 
   const tasksForSelectedDate = tasks.filter(t => 
@@ -307,6 +443,39 @@ export default function App() {
             </div>
           </div>
         </header>
+
+        {/* Today's Pending Revisions Alert Banner */}
+        {(() => {
+          const todayStr = new Date().toDateString();
+          const todayTasks = tasks.filter(t => t.date.toDateString() === todayStr);
+          const pendingCount = todayTasks.filter(t => !t.completed).length;
+          const allDone = todayTasks.length > 0 && pendingCount === 0;
+          if (todayTasks.length === 0) return null;
+          return (
+            <div className={`rounded-xl p-4 mb-6 flex items-center gap-3 border shadow-sm ${
+              allDone
+                ? 'bg-green-50 border-green-200'
+                : 'bg-amber-50 border-amber-200 animate-pulse'
+            }`}>
+              {allDone ? (
+                <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
+              ) : (
+                <Bell className="w-6 h-6 text-amber-500 flex-shrink-0" />
+              )}
+              <div>
+                <p className={`font-bold ${allDone ? 'text-green-700' : 'text-amber-700'}`}>
+                  {allDone
+                    ? 'Sab done! Great job! 🎉'
+                    : `Aaj ${pendingCount} topic${pendingCount > 1 ? 's' : ''} revise karne hain!`
+                  }
+                </p>
+                {!allDone && (
+                  <p className="text-xs text-amber-600 mt-0.5">Calendar pe aaj click karo aur revise karo</p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Reality Check Quote */}
         <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-6 text-white shadow-lg mb-8">
@@ -442,7 +611,20 @@ export default function App() {
                      </button>
                      
                      <div className="flex-1">
-                       <p className={`font-medium ${t.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>{t.text}</p>
+                       <div className="flex items-center gap-2 flex-wrap">
+                         <p className={`font-medium ${t.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>{t.text}</p>
+                         {t.intervalDay && (() => {
+                           const cfg = DAY_BADGE_CONFIG[t.intervalDay] || { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600' };
+                           return (
+                             <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text}`}>
+                               Day {t.intervalDay}
+                             </span>
+                           );
+                         })()}
+                       </div>
+                       <p className="text-xs text-gray-400 mt-0.5">
+                         Learned: {t.originalDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                       </p>
                        
                        {/* Multiple Links Display */}
                        <div className="flex flex-wrap gap-2 mt-2">
@@ -460,6 +642,83 @@ export default function App() {
                      </div>
 
                      <button onClick={() => deleteTask(t.id)} className="text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                   </div>
+
+                   {/* Notes / Sub-topics Section */}
+                   <div className="mt-2 ml-9">
+                     <button
+                       onClick={() => setExpandedTaskId(expandedTaskId === t.id ? null : t.id)}
+                       className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+                     >
+                       <StickyNote className="w-3 h-3" />
+                       Notes ({(t.notes || []).length})
+                       {expandedTaskId === t.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                     </button>
+
+                     {expandedTaskId === t.id && (
+                       <div className="mt-2 space-y-2">
+                         {/* Existing notes */}
+                         {(t.notes || []).length > 0 && (
+                           <ul className="space-y-1">
+                             {(t.notes || []).map(note => (
+                               <li key={note.id} className={`flex items-start gap-2 text-sm p-2 rounded-lg border ${
+                                 note.important
+                                   ? 'bg-red-50 border-red-200'
+                                   : 'bg-gray-50 border-gray-200'
+                               }`}>
+                                 <button
+                                   onClick={() => toggleNoteImportant(t.id, note.id)}
+                                   title={note.important ? 'Important hai' : 'Important mark karo'}
+                                   className={`mt-0.5 flex-shrink-0 text-xs ${note.important ? 'text-red-500' : 'text-gray-400 hover:text-red-400'}`}
+                                 >
+                                   {note.important ? '🔴' : '⚪'}
+                                 </button>
+                                 <span className={`flex-1 ${note.important ? 'text-red-700 font-medium' : 'text-gray-600'}`}>
+                                   {note.text}
+                                 </span>
+                                 <button
+                                   onClick={() => deleteNote(t.id, note.id)}
+                                   className="text-gray-300 hover:text-red-500 flex-shrink-0"
+                                   title="Yaad ho gaya — delete karo"
+                                 >
+                                   <X className="w-3.5 h-3.5" />
+                                 </button>
+                               </li>
+                             ))}
+                           </ul>
+                         )}
+
+                         {/* Add new note input */}
+                         <div className="flex gap-2 items-center">
+                           <input
+                             type="text"
+                             value={noteInput}
+                             onChange={(e) => setNoteInput(e.target.value)}
+                             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addNote(t.id); } }}
+                             placeholder="Sub-topic ya note likho..."
+                             className="flex-1 text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 outline-none"
+                           />
+                           <button
+                             onClick={() => setNoteImportant(!noteImportant)}
+                             title={noteImportant ? 'Important hai' : 'Important mark karo'}
+                             className={`p-1.5 rounded-lg border text-xs ${
+                               noteImportant
+                                 ? 'bg-red-50 border-red-300 text-red-600'
+                                 : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-red-400'
+                             }`}
+                           >
+                             🔴
+                           </button>
+                           <button
+                             onClick={() => addNote(t.id)}
+                             className="bg-indigo-500 hover:bg-indigo-600 text-white p-1.5 rounded-lg"
+                           >
+                             <Plus className="w-4 h-4" />
+                           </button>
+                         </div>
+                         <p className="text-xs text-gray-400">🔴 = zyada dhyan dena &nbsp;|&nbsp; ✕ = yaad ho gaya to delete karo</p>
+                       </div>
+                     )}
                    </div>
                  </div>
                ))}
