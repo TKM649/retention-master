@@ -40,6 +40,7 @@ interface Task {
   originalDate: Date;
   resources: Resource[]; // Changed from single link to array
   reminderTime?: string;
+  intervalDay?: number; // Which repetition day this task belongs to
 }
 
 export default function App() {
@@ -78,6 +79,9 @@ export default function App() {
   const [currentLinkTitle, setCurrentLinkTitle] = useState('');
   const [confettiPieces, setConfettiPieces] = useState<ConfettiPiece[]>([]);
   const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Recall modal state (shown after 30-day revision)
+  const [recallModalTask, setRecallModalTask] = useState<Task | null>(null);
 
   // Daily Reality Check Quote
   const todayQuote = QUOTES[new Date().getDate() % QUOTES.length];
@@ -158,7 +162,7 @@ export default function App() {
   };
 
   const addRevisions = (taskText: string, resources: Resource[], time: string) => {
-    const intervals = [0, 1, 2, 5, 10, 30];
+    const intervals = [3, 7, 14, 21, 30];
     const newTasks: Task[] = intervals.map(days => {
       const date = new Date();
       date.setDate(date.getDate() + days);
@@ -169,10 +173,40 @@ export default function App() {
         date: date,
         originalDate: new Date(),
         resources: resources, 
-        reminderTime: time
+        reminderTime: time,
+        intervalDay: days
       };
     });
     setTasks([...tasks, ...newTasks]);
+  };
+
+  // Add a single extra revision N days from now for a topic
+  const addExtraRevision = (task: Task, extraDays: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + extraDays);
+    const newTask: Task = {
+      id: crypto.randomUUID(),
+      text: task.text,
+      completed: false,
+      date: date,
+      originalDate: task.originalDate,
+      resources: task.resources,
+      reminderTime: task.reminderTime,
+      intervalDay: (task.intervalDay || 30) + extraDays
+    };
+    setTasks(prev => [...prev, newTask]);
+  };
+
+  // Handle recall modal responses
+  const handleRecallYes = () => {
+    setRecallModalTask(null);
+  };
+
+  const handleRecallNo = () => {
+    if (recallModalTask) {
+      addExtraRevision(recallModalTask, 30);
+    }
+    setRecallModalTask(null);
   };
 
   const handleAddTask = (e: React.FormEvent) => {
@@ -197,6 +231,10 @@ export default function App() {
 
     if (willComplete) {
       triggerConfetti();
+      // If this is a 30-day (or beyond) revision, ask if they remember
+      if (targetTask && targetTask.intervalDay && targetTask.intervalDay >= 30) {
+        setRecallModalTask(targetTask);
+      }
     }
 
     const todayStr = new Date().toDateString();
@@ -428,6 +466,33 @@ export default function App() {
              </div>
           </div>
         </div>
+
+        {/* Recall Modal - shown after completing 30+ day revision */}
+        {recallModalTask && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl text-center">
+              <Brain className="w-12 h-12 text-indigo-600 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-gray-800 mb-2">Yaad Aaya? 🤔</h3>
+              <p className="text-sm text-gray-500 mb-1">Topic: <span className="font-medium text-gray-700">{recallModalTask.text}</span></p>
+              <p className="text-sm text-gray-400 mb-6">Kya aapko yeh topic yaad hai?</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleRecallNo}
+                  className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 font-medium py-3 rounded-xl border border-red-200 transition"
+                >
+                  Nahi 😕
+                </button>
+                <button
+                  onClick={handleRecallYes}
+                  className="flex-1 bg-green-50 hover:bg-green-100 text-green-600 font-medium py-3 rounded-xl border border-green-200 transition"
+                >
+                  Haan! ✅
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-3">"Nahi" select karne par 30 din baad phir revision schedule hoga</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
