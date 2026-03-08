@@ -392,7 +392,7 @@ export default function App() {
   const completedCount = tasksForSelectedDate.filter(t => t.completed).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-blue-500 text-gray-800 font-sans relative overflow-hidden">
       <style>{`
         @keyframes confettiFall {
           0% { transform: translate3d(0, -20%, 0); opacity: 1; }
