@@ -9,6 +9,7 @@ const DAY_BADGE_CONFIG: Record<number, { bg: string; text: string }> = {
   3: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
   7: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700' },
   14: { bg: 'bg-purple-50 border-purple-200', text: 'text-purple-700' },
+  21: { bg: 'bg-indigo-50 border-indigo-200', text: 'text-indigo-700' },
   24: { bg: 'bg-orange-50 border-orange-200', text: 'text-orange-700' },
   30: { bg: 'bg-red-50 border-red-200', text: 'text-red-700' },
 };
@@ -68,15 +69,19 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>(() => {
     const saved = localStorage.getItem('sr_tasks');
     if (saved) {
-      return JSON.parse(saved).map((t: any) => ({
-        ...t,
-        date: new Date(t.date),
-        originalDate: new Date(t.originalDate),
-        // Backward compatibility: Convert old docLink to new resources array
-        resources: t.resources || (t.docLink ? [{ id: 'old', url: t.docLink, title: 'Resource' }] : []),
-        notes: t.notes || [],
-        topicKey: t.topicKey || `${t.text}_${t.originalDate}`
-      }));
+      return JSON.parse(saved).map((t: any) => {
+        const parsedDate = t.date ? new Date(t.date) : new Date();
+        const parsedOriginalDate = t.originalDate ? new Date(t.originalDate) : parsedDate;
+        return {
+          ...t,
+          date: parsedDate,
+          originalDate: parsedOriginalDate,
+          // Backward compatibility: Convert old docLink to new resources array
+          resources: t.resources || (t.docLink ? [{ id: 'old', url: t.docLink, title: 'Resource' }] : []),
+          notes: t.notes || [],
+          topicKey: t.topicKey || `${t.text}_${parsedOriginalDate.getTime()}`
+        };
+      });
     }
     return [];
   });
@@ -84,6 +89,10 @@ export default function App() {
   const [streak, setStreak] = useState(() => {
     const saved = localStorage.getItem('sr_streak');
     return saved ? parseInt(saved) : 0;
+  });
+
+  const [streakLastUpdated, setStreakLastUpdated] = useState(() => {
+    return localStorage.getItem('sr_streak_last_updated') || '';
   });
 
   const [lastVisit, setLastVisit] = useState(() => {
@@ -120,7 +129,8 @@ export default function App() {
     localStorage.setItem('sr_tasks', JSON.stringify(tasks));
     localStorage.setItem('sr_streak', streak.toString());
     localStorage.setItem('sr_last_visit', lastVisit);
-  }, [tasks, streak, lastVisit]);
+    localStorage.setItem('sr_streak_last_updated', streakLastUpdated);
+  }, [tasks, streak, lastVisit, streakLastUpdated]);
 
   useEffect(() => {
     const today = new Date().toDateString();
@@ -333,7 +343,15 @@ export default function App() {
     const todaysTasks = updatedTasks.filter(t => t.date.toDateString() === todayStr);
     
     if (todaysTasks.length > 0 && todaysTasks.every(t => t.completed)) {
-      setStreak(s => s + 1);
+      if (streakLastUpdated !== todayStr) {
+        setStreak(s => s + 1);
+        setStreakLastUpdated(todayStr);
+      }
+    } else if (todaysTasks.length > 0 && todaysTasks.some(t => !t.completed)) {
+      if (streakLastUpdated === todayStr) {
+        setStreak(s => Math.max(0, s - 1));
+        setStreakLastUpdated('');
+      }
     }
   };
 
@@ -571,21 +589,38 @@ export default function App() {
             </div>
             
             <div className="grid grid-cols-7 gap-1 text-center text-sm">
-               {['S','M','T','W','T','F','S'].map(d => <div key={d} className="text-gray-400 text-xs">{d}</div>)}
-               {Array.from({length: 35}).map((_, i) => {
-                 const d = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-                 const startDay = d.getDay();
-                 const dayNum = i - startDay + 1;
-                 const currentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), dayNum);
-                 if (dayNum > 0 && dayNum <= 31) { 
-                   const isSelected = currentDate.toDateString() === selectedDate.toDateString();
-                   const hasTasks = tasks.some(t => t.date.toDateString() === currentDate.toDateString());
-                   return (
-                     <div key={i} onClick={() => setSelectedDate(currentDate)} className={`aspect-square flex items-center justify-center rounded-full cursor-pointer text-xs ${isSelected ? 'bg-indigo-600 text-white font-bold' : 'hover:bg-gray-100 text-gray-600'} ${hasTasks && !isSelected ? 'bg-indigo-50 text-indigo-600 font-medium' : ''}`}>{dayNum}</div>
-                   );
-                 }
-                 return <div key={i}></div>;
-               })}
+               {['S','M','T','W','T','F','S'].map((d, index) => <div key={index} className="text-gray-400 text-xs">{d}</div>)}
+               {(() => {
+                 const year = selectedDate.getFullYear();
+                 const month = selectedDate.getMonth();
+                 const firstDayOfMonth = new Date(year, month, 1);
+                 const startDay = firstDayOfMonth.getDay();
+                 const totalDays = new Date(year, month + 1, 0).getDate();
+                 const totalCells = startDay + totalDays > 35 ? 42 : 35;
+
+                 return Array.from({ length: totalCells }).map((_, i) => {
+                   const dayNum = i - startDay + 1;
+                   if (dayNum > 0 && dayNum <= totalDays) {
+                     const currentDate = new Date(year, month, dayNum);
+                     const isSelected = currentDate.toDateString() === selectedDate.toDateString();
+                     const hasTasks = tasks.some(t => t.date.toDateString() === currentDate.toDateString());
+                     return (
+                       <div 
+                         key={i} 
+                         onClick={() => setSelectedDate(currentDate)} 
+                         className={`aspect-square flex items-center justify-center rounded-full cursor-pointer text-xs ${
+                           isSelected 
+                             ? 'bg-indigo-600 text-white font-bold' 
+                             : 'hover:bg-gray-100 text-gray-600'
+                         } ${hasTasks && !isSelected ? 'bg-indigo-50 text-indigo-600 font-medium' : ''}`}
+                       >
+                         {dayNum}
+                       </div>
+                     );
+                   }
+                   return <div key={i}></div>;
+                 });
+               })()}
             </div>
           </div>
 
